@@ -3,95 +3,104 @@
  *
  * Displays order info, status timeline, quotation review, and images.
  */
-
-import React, { useCallback, useState } from 'react';
+import { Timeline } from "@/components/Timeline";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { orderService, type Order } from "@/services/orderService";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  useColorScheme,
-  Linking,
-  ActivityIndicator,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { orderService, type Order } from '@/services/orderService';
+    BorderRadius,
+    Colors,
+    Spacing,
+    TextStyles,
+    type ThemeColors
+} from "@/theme";
 import {
-  getErrorMessage,
-  formatCurrency,
-  formatDateTime,
-  getStatusLabel,
-} from '@/utils/formatters';
-import { Timeline } from '@/components/Timeline';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Colors, Spacing, TextStyles, BorderRadius, Shadows, type ThemeColors } from '@/theme';
-
+    formatCurrency,
+    formatDateTime,
+    getErrorMessage
+} from "@/utils/formatters";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    Linking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    useColorScheme,
+    View,
+} from "react-native";
 export default function OrderDetailScreen() {
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = Colors[scheme === "dark" ? "dark" : "light"];
   const { id } = useLocalSearchParams<{ id: string }>();
-
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-
   const fetchOrder = useCallback(async () => {
     if (!id) return;
     try {
       const response = await orderService.getById(id);
       setOrder(response.data);
     } catch (error) {
-      Alert.alert('Error', getErrorMessage(error));
+      Alert.alert("Error", getErrorMessage(error));
     } finally {
       setLoading(false);
     }
   }, [id]);
-
   useFocusEffect(
     useCallback(() => {
       fetchOrder();
     }, [fetchOrder]),
   );
-
   const handleProceedToPayment = () => {
     Alert.alert(
-      'Payment',
-      'Payment integration coming soon. Please contact support to complete your payment.',
-      [{ text: 'OK' }],
+      "Payment",
+      "Payment integration coming soon. Please contact support to complete your payment.",
+      [{ text: "OK" }],
     );
   };
-
   const openSourceUrl = () => {
     if (order?.source_url) {
       Linking.openURL(order.source_url).catch(() =>
-        Alert.alert('Error', 'Could not open the URL'),
+        Alert.alert("Error", "Could not open the URL"),
       );
     }
   };
-
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
-
   if (!order) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={colors.textTertiary} />
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <Ionicons
+          name="alert-circle-outline"
+          size={48}
+          color={colors.textTertiary}
+        />
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>
           Order not found
         </Text>
       </View>
     );
   }
-
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -108,7 +117,6 @@ export default function OrderDetailScreen() {
           ID: {order.id.slice(0, 8)}...
         </Text>
       </View>
-
       {/* Status Timeline */}
       <Card variant="elevated" style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -116,9 +124,8 @@ export default function OrderDetailScreen() {
         </Text>
         <Timeline currentStatus={order.status} />
       </Card>
-
       {/* Quotation Review — visible when QUOTATION_PROVIDED */}
-      {order.status === 'QUOTATION_PROVIDED' && (
+      {order.status === "QUOTATION_PROVIDED" && (
         <Card variant="elevated" style={styles.section}>
           <View style={styles.quotationHeader}>
             <Ionicons name="receipt-outline" size={22} color={colors.primary} />
@@ -126,7 +133,6 @@ export default function OrderDetailScreen() {
               Quotation Review
             </Text>
           </View>
-
           <View style={styles.quotationGrid}>
             <QuotationRow
               label="Verified Price"
@@ -140,10 +146,15 @@ export default function OrderDetailScreen() {
             />
             <QuotationRow
               label="Weight"
-              value={order.weight ? `${order.weight} kg` : '—'}
+              value={order.weight ? `${order.weight} kg` : "—"}
               colors={colors}
             />
-            <View style={[styles.quotationDivider, { backgroundColor: colors.divider }]} />
+            <View
+              style={[
+                styles.quotationDivider,
+                { backgroundColor: colors.divider },
+              ]}
+            />
             <QuotationRow
               label="Total"
               value={formatCurrency(
@@ -153,7 +164,6 @@ export default function OrderDetailScreen() {
               bold
             />
           </View>
-
           <Button
             title="Proceed to Payment"
             onPress={handleProceedToPayment}
@@ -164,13 +174,30 @@ export default function OrderDetailScreen() {
           />
         </Card>
       )}
-
+      {/* Quotation Rejected Notice */}
+      {order.status === "QUOTATION_REJECTED" && (
+        <Card style={styles.section}>
+          <View style={styles.quotationHeader}>
+            <Ionicons
+              name="close-circle-outline"
+              size={22}
+              color={colors.error}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.error }]}>
+              Quotation Rejected
+            </Text>
+          </View>
+          <Text style={[{ color: colors.textSecondary }, styles.rejectedText]}>
+            This order's quotation was rejected. Please contact support or
+            create a new request if needed.
+          </Text>
+        </Card>
+      )}
       {/* Order Info */}
       <Card style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Order Details
         </Text>
-
         <DetailRow
           icon="link-outline"
           label="Source URL"
@@ -182,13 +209,17 @@ export default function OrderDetailScreen() {
         <DetailRow
           icon="document-text-outline"
           label="Description"
-          value={order.description || '—'}
+          value={order.description || "—"}
           colors={colors}
         />
         <DetailRow
           icon="cash-outline"
           label="Declared Price"
-          value={formatCurrency(order.declared_price)}
+          value={
+            order.declared_price != null
+              ? formatCurrency(order.declared_price)
+              : "—"
+          }
           colors={colors}
         />
         <DetailRow
@@ -204,7 +235,6 @@ export default function OrderDetailScreen() {
           colors={colors}
         />
       </Card>
-
       {/* Image Gallery */}
       {order.image_urls && order.image_urls.length > 0 && (
         <Card style={styles.section}>
@@ -232,7 +262,6 @@ export default function OrderDetailScreen() {
     </ScrollView>
   );
 }
-
 function QuotationRow({
   label,
   value,
@@ -250,7 +279,7 @@ function QuotationRow({
         style={[
           styles.quotationLabel,
           { color: colors.textSecondary },
-          bold && { fontWeight: '700', color: colors.text },
+          bold && { fontWeight: "700", color: colors.text },
         ]}
       >
         {label}
@@ -259,7 +288,7 @@ function QuotationRow({
         style={[
           styles.quotationValue,
           { color: colors.text },
-          bold && { fontWeight: '700', fontSize: 18 },
+          bold && { fontWeight: "700", fontSize: 18 },
         ]}
       >
         {value}
@@ -267,7 +296,6 @@ function QuotationRow({
     </View>
   );
 }
-
 function DetailRow({
   icon,
   label,
@@ -304,19 +332,18 @@ function DetailRow({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   content: {
     padding: Spacing.lg,
-    paddingBottom: Spacing['4xl'],
+    paddingBottom: Spacing["4xl"],
   },
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.md,
   },
   errorText: {
@@ -332,7 +359,7 @@ const styles = StyleSheet.create({
   },
   orderId: {
     ...TextStyles.tiny,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
   section: {
     marginBottom: Spacing.lg,
@@ -343,8 +370,8 @@ const styles = StyleSheet.create({
   },
   // Quotation
   quotationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
@@ -352,9 +379,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   quotationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: Spacing.xs,
   },
   quotationLabel: {
@@ -370,14 +397,18 @@ const styles = StyleSheet.create({
   paymentBtn: {
     marginTop: Spacing.lg,
   },
+  rejectedText: {
+    ...TextStyles.body,
+    lineHeight: 22,
+  },
   // Detail rows
   detailRow: {
     paddingVertical: Spacing.sm,
     gap: Spacing.xs,
   },
   detailLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.sm,
   },
   detailLabel: {
@@ -389,8 +420,8 @@ const styles = StyleSheet.create({
   },
   // Image gallery
   imageGallery: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
   },
   galleryImage: {

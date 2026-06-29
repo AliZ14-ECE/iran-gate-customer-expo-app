@@ -2,39 +2,39 @@
  * Iran Gate — Login Screen
  */
 
-import React, { useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { authService } from "@/services/authService";
+import { useAuthStore } from "@/store/useAuthStore";
+import { Colors, Spacing, TextStyles } from "@/theme";
+import { getErrorMessage } from "@/utils/formatters";
+import { registerForPushNotificationsAsync } from "@/utils/notifications";
+import { Ionicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
   useColorScheme,
-} from 'react-native';
-import { Link } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/store/useAuthStore';
-import { authService } from '@/services/authService';
-import { registerForPushNotificationsAsync } from '@/utils/notifications';
-import { getErrorMessage } from '@/utils/formatters';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Colors, Spacing, TextStyles } from '@/theme';
+  View,
+} from "react-native";
 
 export default function LoginScreen() {
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = Colors[scheme === "dark" ? "dark" : "light"];
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuthStore();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Validation Error', 'Please fill in all fields.');
+      Alert.alert("Validation Error", "Please fill in all fields.");
       return;
     }
 
@@ -44,22 +44,23 @@ export default function LoginScreen() {
       // After successful login, register push token
       try {
         const pushToken = await registerForPushNotificationsAsync();
+        console.log("push tokennnnnnnnnnnnnnnnnnn:  ", pushToken);
         if (pushToken) {
           await authService.registerPushToken(pushToken);
         }
       } catch {
         // Push token registration is non-critical
-        console.log('Push token registration failed (non-critical)');
+        console.log("Push token registration failed (non-critical)");
       }
     } catch (error) {
-      Alert.alert('Login Failed', getErrorMessage(error));
+      Alert.alert("Login Failed", getErrorMessage(error));
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -68,7 +69,10 @@ export default function LoginScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View
-            style={[styles.logoCircle, { backgroundColor: colors.primaryLight }]}
+            style={[
+              styles.logoCircle,
+              { backgroundColor: colors.primaryLight },
+            ]}
           >
             <Ionicons name="globe-outline" size={40} color={colors.primary} />
           </View>
@@ -123,7 +127,7 @@ export default function LoginScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            Don't have an account?{' '}
+            Don't have an account?{" "}
           </Text>
           <Link href="/(auth)/register" style={styles.link}>
             <Text style={[styles.linkText, { color: colors.primary }]}>
@@ -142,20 +146,20 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing['2xl'],
-    paddingVertical: Spacing['4xl'],
+    justifyContent: "center",
+    paddingHorizontal: Spacing["2xl"],
+    paddingVertical: Spacing["4xl"],
   },
   header: {
-    alignItems: 'center',
-    marginBottom: Spacing['4xl'],
+    alignItems: "center",
+    marginBottom: Spacing["4xl"],
   },
   logoCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.lg,
   },
   brandTitle: {
@@ -166,12 +170,12 @@ const styles = StyleSheet.create({
     ...TextStyles.body,
   },
   form: {
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing["2xl"],
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   footerText: {
     ...TextStyles.body,

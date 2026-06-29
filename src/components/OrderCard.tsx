@@ -63,7 +63,7 @@ export function OrderCard({ order, onPress }: OrderCardProps) {
         <View style={styles.footerItem}>
           <Ionicons name="pricetag-outline" size={14} color={colors.iconSecondary} />
           <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            {formatCurrency(order.declared_price)}
+            {order.declared_price != null ? formatCurrency(order.declared_price) : '—'}
           </Text>
         </View>
         <View style={styles.footerItem}>

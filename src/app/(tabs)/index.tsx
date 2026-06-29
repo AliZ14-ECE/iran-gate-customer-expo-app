@@ -39,8 +39,7 @@ export default function HomeScreen() {
   const fetchOrders = useCallback(async () => {
     try {
       const response = await orderService.list();
-      console.log("orders response:::", response.data);
-      setOrders(response.data.orders ?? []);
+      setOrders(response.data.data ?? []);
     } catch (error) {
       Alert.alert("Error", getErrorMessage(error));
     } finally {
