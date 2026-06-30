@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+iran-gate-customer-app-firebase-adminsdk-fbsvc-5c82cce1c4.json
 
 # Native
 .kotlin/

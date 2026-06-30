@@ -48,9 +48,9 @@ export default function LoginScreen() {
         if (pushToken) {
           await authService.registerPushToken(pushToken);
         }
-      } catch {
+      } catch (pushError) {
         // Push token registration is non-critical
-        console.log("Push token registration failed (non-critical)");
+        console.warn("Push token registration failed (non-critical):", pushError);
       }
     } catch (error) {
       Alert.alert("Login Failed", getErrorMessage(error));
