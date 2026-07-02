@@ -8,14 +8,21 @@
  *  - Push notification configuration
  */
 
-import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
-import { Stack, useRouter, useSegments, ThemeProvider, DarkTheme, DefaultTheme } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useAuthStore } from '@/store/useAuthStore';
-import { LoadingScreen } from '@/components/LoadingScreen';
-import { configureNotificationHandler } from '@/utils/notifications';
-import { Palette } from '@/theme';
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { useAuthStore } from "@/store/useAuthStore";
+import { Palette } from "@/theme";
+import { configureNotificationHandler } from "@/utils/notifications";
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  useRouter,
+  useSegments,
+} from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { useColorScheme } from "react-native";
 
 // Configure notification display while app is foregrounded
 configureNotificationHandler();
@@ -35,14 +42,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isHydrated) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const inAuthGroup = segments[0] === "(auth)";
 
     if (!token && !inAuthGroup) {
       // Not authenticated — go to login
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/login");
     } else if (token && inAuthGroup) {
       // Authenticated — go to main tabs
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
   }, [token, isHydrated, segments, router]);
 
@@ -77,9 +84,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider
-      value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}
+      value={colorScheme === "dark" ? customDarkTheme : customLightTheme}
     >
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
@@ -87,11 +94,13 @@ export default function RootLayout() {
           name="orders/create"
           options={{
             headerShown: true,
-            title: 'New Request',
-            presentation: 'modal',
-            headerTintColor: colorScheme === 'dark' ? Palette.gray50 : Palette.gray900,
+            title: "New Order",
+            presentation: "modal",
+            headerTintColor:
+              colorScheme === "dark" ? Palette.gray50 : Palette.gray900,
             headerStyle: {
-              backgroundColor: colorScheme === 'dark' ? Palette.gray900 : Palette.white,
+              backgroundColor:
+                colorScheme === "dark" ? Palette.gray900 : Palette.white,
             },
           }}
         />
@@ -99,10 +108,12 @@ export default function RootLayout() {
           name="orders/[id]"
           options={{
             headerShown: true,
-            title: 'Order Details',
-            headerTintColor: colorScheme === 'dark' ? Palette.gray50 : Palette.gray900,
+            title: "Order Details",
+            headerTintColor:
+              colorScheme === "dark" ? Palette.gray50 : Palette.gray900,
             headerStyle: {
-              backgroundColor: colorScheme === 'dark' ? Palette.gray900 : Palette.white,
+              backgroundColor:
+                colorScheme === "dark" ? Palette.gray900 : Palette.white,
             },
           }}
         />
