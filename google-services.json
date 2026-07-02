@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1057332690868",
+    "project_id": "iran-gate-customer-app",
+    "storage_bucket": "iran-gate-customer-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057332690868:android:b02d6cbddd7c1b507f3ce1",
+        "android_client_info": {
+          "package_name": "com.irangate.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAquU3m8J6u_5urc_Z1DPp4KzFcG5RY_rw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
