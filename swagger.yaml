@@ -425,18 +425,36 @@ components:
           type: number
           format: double
           nullable: true
-        shipping_fee:
+        declared_shipping_fee:
           type: number
           format: double
           nullable: true
-        weight:
+          description: Customer-declared shipping fee estimate
+        verified_shipping_fee:
           type: number
           format: double
           nullable: true
-        volume:
+          description: Admin-verified final shipping fee
+        declared_weight:
           type: number
           format: double
           nullable: true
+          description: Customer-declared weight estimate (in kg)
+        verified_weight:
+          type: number
+          format: double
+          nullable: true
+          description: Admin-verified final weight (in kg)
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          description: Customer-declared volume estimate (in cubic cm)
+        verified_volume:
+          type: number
+          format: double
+          nullable: true
+          description: Admin-verified final volume (in cubic cm)
         supplier_tracking_number:
           type: string
           nullable: true
@@ -658,6 +676,24 @@ components:
           nullable: true
           description: Customer-declared estimated price
           example: 349.99
+        declared_weight:
+          type: number
+          format: double
+          nullable: true
+          description: Estimated weight in kg
+          example: 0.5
+        declared_volume:
+          type: number
+          format: double
+          nullable: true
+          description: Estimated volume in cubic cm
+          example: 1200.0
+        declared_shipping_fee:
+          type: number
+          format: double
+          nullable: true
+          description: Estimated shipping fee
+          example: 25.00
       required:
         - source_url
         - title
@@ -671,23 +707,23 @@ components:
           nullable: true
           description: Admin-verified product price
           example: 355.00
-        shipping_fee:
+        verified_shipping_fee:
           type: number
           format: double
           nullable: true
-          description: Calculated shipping fee
+          description: Final shipping fee
           example: 25.00
-        weight:
+        verified_weight:
           type: number
           format: double
           nullable: true
-          description: Package weight in kg
+          description: Verified weight in kg
           example: 0.5
-        volume:
+        verified_volume:
           type: number
           format: double
           nullable: true
-          description: Package volume in cubic cm
+          description: Verified volume in cubic cm
           example: 1200.0
 
     UpdatePurchaseRequest:

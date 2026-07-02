@@ -4,46 +4,56 @@
  * Form to submit a new proxy-purchasing request with image uploads.
  */
 
-import React, { useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { orderService } from "@/services/orderService";
+import { BorderRadius, Colors, Spacing, TextStyles } from "@/theme";
+import { getErrorMessage } from "@/utils/formatters";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
   Alert,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
   useColorScheme,
-  ActivityIndicator,
-} from 'react-native';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
-import { orderService } from '@/services/orderService';
-import { getErrorMessage } from '@/utils/formatters';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Colors, Spacing, TextStyles, BorderRadius, Shadows } from '@/theme';
+  View,
+} from "react-native";
 
 export default function CreateOrderScreen() {
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = Colors[scheme === "dark" ? "dark" : "light"];
   const router = useRouter();
 
-  const [title, setTitle] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
-  const [description, setDescription] = useState('');
-  const [declaredPrice, setDeclaredPrice] = useState('');
+  const [title, setTitle] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [declaredPrice, setDeclaredPrice] = useState("");
+  const [declaredWeight, setDeclaredWeight] = useState("");
+  const [declaredVolume, setDeclaredVolume] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+
+  const weightVal = parseFloat(declaredWeight);
+  const volumeVal = parseFloat(declaredVolume);
+  // A simple equation: $10 per kg + $0.05 per cm³ (Modify later)
+  const calculatedShippingFee =
+    declaredWeight &&
+    declaredVolume &&
+    (weightVal * 10 + volumeVal * 0.05).toFixed(2);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const pickAndUploadImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ["images"],
         quality: 0.8,
         allowsMultipleSelection: false,
       });
@@ -55,7 +65,7 @@ export default function CreateOrderScreen() {
       const uploadedUrl = await orderService.uploadImage(uri);
       setImageUrls((prev) => [...prev, uploadedUrl]);
     } catch (error) {
-      Alert.alert('Upload Failed', getErrorMessage(error));
+      Alert.alert("Upload Failed", getErrorMessage(error));
     } finally {
       setUploading(false);
     }
@@ -67,15 +77,15 @@ export default function CreateOrderScreen() {
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert('Validation', 'Please enter a title for your request.');
+      Alert.alert("Validation", "Please enter a title for your request.");
       return;
     }
     if (!sourceUrl.trim()) {
-      Alert.alert('Validation', 'Please enter the source URL.');
+      Alert.alert("Validation", "Please enter the source URL.");
       return;
     }
     if (!declaredPrice.trim() || isNaN(Number(declaredPrice))) {
-      Alert.alert('Validation', 'Please enter a valid declared price.');
+      Alert.alert("Validation", "Please enter a valid declared price.");
       return;
     }
 
@@ -86,17 +96,24 @@ export default function CreateOrderScreen() {
         source_url: sourceUrl.trim(),
         description: description.trim(),
         declared_price: parseFloat(declaredPrice),
+        declared_weight: declaredWeight
+          ? parseFloat(declaredWeight)
+          : undefined,
+        declared_volume: declaredVolume
+          ? parseFloat(declaredVolume)
+          : undefined,
+        declared_shipping_fee: parseFloat(calculatedShippingFee) || undefined,
         image_urls: imageUrls,
       });
 
-      Alert.alert('Success', 'Your request has been submitted!', [
+      Alert.alert("Success", "Your request has been submitted!", [
         {
-          text: 'View Order',
+          text: "View Order",
           onPress: () => router.replace(`/orders/${response.data.id}`),
         },
       ]);
     } catch (error) {
-      Alert.alert('Error', getErrorMessage(error));
+      Alert.alert("Error", getErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -105,7 +122,7 @@ export default function CreateOrderScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -132,7 +149,9 @@ export default function CreateOrderScreen() {
           placeholder="e.g., Nike Air Max 90"
           value={title}
           onChangeText={setTitle}
-          icon={<Ionicons name="pricetag-outline" size={18} color={colors.icon} />}
+          icon={
+            <Ionicons name="pricetag-outline" size={18} color={colors.icon} />
+          }
         />
 
         <Input
@@ -153,11 +172,17 @@ export default function CreateOrderScreen() {
           multiline
           numberOfLines={3}
           style={styles.textArea}
-          icon={<Ionicons name="document-text-outline" size={18} color={colors.icon} />}
+          icon={
+            <Ionicons
+              name="document-text-outline"
+              size={18}
+              color={colors.icon}
+            />
+          }
         />
 
         <Input
-          label="Declared Price (USD)"
+          label="Price (USD)"
           placeholder="0.00"
           value={declaredPrice}
           onChangeText={setDeclaredPrice}
@@ -165,9 +190,56 @@ export default function CreateOrderScreen() {
           icon={<Ionicons name="cash-outline" size={18} color={colors.icon} />}
         />
 
+        {/* Shipping Fee */}
+        <Text
+          style={{
+            fontFamily: "font_IRANSansBold",
+            fontSize: 14,
+            color: colors.primary,
+            marginBottom: 8,
+            marginTop: 8,
+          }}
+        >
+          Enter the weight and Volume to approximately calculate Shipping Fee
+        </Text>
+
+        <Input
+          label="Weight (kg)"
+          placeholder="0.5"
+          value={declaredWeight}
+          onChangeText={setDeclaredWeight}
+          keyboardType="decimal-pad"
+          icon={
+            <Ionicons name="barbell-outline" size={18} color={colors.icon} />
+          }
+        />
+
+        <Input
+          label="Volume (cm³)"
+          placeholder="1200"
+          value={declaredVolume}
+          onChangeText={setDeclaredVolume}
+          keyboardType="decimal-pad"
+          icon={<Ionicons name="cube-outline" size={18} color={colors.icon} />}
+        />
+
+        <Input
+          label="Shipping Fee (USD) approximately calculated"
+          placeholder="--"
+          value={calculatedShippingFee}
+          editable={false}
+          icon={
+            <MaterialCommunityIcons
+              name="truck-outline"
+              size={18}
+              color={colors.icon}
+            />
+          }
+        />
+
         {/* Image Upload Section */}
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-          Screenshots (optional)
+          Photos (optional)
         </Text>
         <View style={styles.imageGrid}>
           {imageUrls.map((url, index) => (
@@ -204,7 +276,9 @@ export default function CreateOrderScreen() {
             ) : (
               <>
                 <Ionicons name="camera-outline" size={24} color={colors.icon} />
-                <Text style={[styles.addImageText, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.addImageText, { color: colors.textSecondary }]}
+                >
                   Add Photo
                 </Text>
               </>
@@ -239,11 +313,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.lg,
-    paddingBottom: Spacing['4xl'],
+    paddingBottom: Spacing["4xl"],
   },
   infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -257,7 +331,7 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 70,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   sectionLabel: {
     ...TextStyles.captionMedium,
@@ -265,44 +339,44 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.xxs,
   },
   imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing["2xl"],
   },
   imageThumb: {
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: BorderRadius.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   thumbImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   removeBtn: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     right: 4,
     width: 22,
     height: 22,
     borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   addImageBtn: {
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 2,
   },
   addImageText: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   submitBtn: {
     marginTop: Spacing.sm,

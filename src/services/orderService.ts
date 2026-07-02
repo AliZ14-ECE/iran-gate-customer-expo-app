@@ -22,6 +22,9 @@ export interface CreateOrderPayload {
   description?: string;
   image_urls?: string[];
   declared_price?: number;
+  declared_weight?: number;
+  declared_volume?: number;
+  declared_shipping_fee?: number;
 }
 export interface Order {
   id: string;
@@ -32,9 +35,12 @@ export interface Order {
   image_urls?: string[];
   declared_price?: number | null;
   verified_price?: number | null;
-  shipping_fee?: number | null;
-  weight?: number | null;
-  volume?: number | null;
+  declared_shipping_fee?: number | null;
+  verified_shipping_fee?: number | null;
+  declared_weight?: number | null;
+  verified_weight?: number | null;
+  declared_volume?: number | null;
+  verified_volume?: number | null;
   supplier_tracking_number?: string | null;
   transit_shipment_id?: string | null;
   current_warehouse_id?: string | null;

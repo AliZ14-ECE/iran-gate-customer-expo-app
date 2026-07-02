@@ -9,30 +9,30 @@ import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { orderService, type Order } from "@/services/orderService";
 import {
-    BorderRadius,
-    Colors,
-    Spacing,
-    TextStyles,
-    type ThemeColors
+  BorderRadius,
+  Colors,
+  Spacing,
+  TextStyles,
+  type ThemeColors,
 } from "@/theme";
 import {
-    formatCurrency,
-    formatDateTime,
-    getErrorMessage
+  formatCurrency,
+  formatDateTime,
+  getErrorMessage,
 } from "@/utils/formatters";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    useColorScheme,
-    View,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
 } from "react-native";
 export default function OrderDetailScreen() {
   const scheme = useColorScheme();
@@ -141,12 +141,21 @@ export default function OrderDetailScreen() {
             />
             <QuotationRow
               label="Shipping Fee"
-              value={formatCurrency(order.shipping_fee ?? 0)}
+              value={formatCurrency(order.verified_shipping_fee ?? 0)}
               colors={colors}
             />
             <QuotationRow
               label="Weight"
-              value={order.weight ? `${order.weight} kg` : "—"}
+              value={
+                order.verified_weight ? `${order.verified_weight} kg` : "—"
+              }
+              colors={colors}
+            />
+            <QuotationRow
+              label="Volume"
+              value={
+                order.verified_volume ? `${order.verified_volume} cm³` : "—"
+              }
               colors={colors}
             />
             <View
@@ -158,7 +167,8 @@ export default function OrderDetailScreen() {
             <QuotationRow
               label="Total"
               value={formatCurrency(
-                (order.verified_price ?? 0) + (order.shipping_fee ?? 0),
+                (order.verified_price ?? 0) +
+                  (order.verified_shipping_fee ?? 0),
               )}
               colors={colors}
               bold
@@ -218,6 +228,32 @@ export default function OrderDetailScreen() {
           value={
             order.declared_price != null
               ? formatCurrency(order.declared_price)
+              : "—"
+          }
+          colors={colors}
+        />
+        <DetailRow
+          icon="barbell-outline"
+          label="Declared Weight"
+          value={
+            order.declared_weight != null ? `${order.declared_weight} kg` : "—"
+          }
+          colors={colors}
+        />
+        <DetailRow
+          icon="cube-outline"
+          label="Declared Volume"
+          value={
+            order.declared_volume != null ? `${order.declared_volume} cm³` : "—"
+          }
+          colors={colors}
+        />
+        <DetailRow
+          icon="airplane-outline"
+          label="Declared Shipping Fee"
+          value={
+            order.declared_shipping_fee != null
+              ? formatCurrency(order.declared_shipping_fee)
               : "—"
           }
           colors={colors}
