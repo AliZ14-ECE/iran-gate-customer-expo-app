@@ -105,6 +105,13 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="orders/digikala"
+          options={{
+            headerShown: false,
+            presentation: "modal",
+          }}
+        />
+        <Stack.Screen
           name="orders/[id]"
           options={{
             headerShown: true,

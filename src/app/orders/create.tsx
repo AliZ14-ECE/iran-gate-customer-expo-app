@@ -7,13 +7,13 @@
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { orderService } from "@/services/orderService";
-import { BorderRadius, Colors, Spacing, TextStyles } from "@/theme";
+import { BorderRadius, Colors, Spacing, TextStyles, Shadows } from "@/theme";
 import { getErrorMessage } from "@/utils/formatters";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -31,14 +31,21 @@ export default function CreateOrderScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "dark" ? "dark" : "light"];
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    sourceUrl?: string;
+    screenshotUri?: string;
+    screenshotUrl?: string;
+    title?: string;
+  }>();
 
-  const [title, setTitle] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [title, setTitle] = useState(params.title ?? "");
+  const [sourceUrl, setSourceUrl] = useState(params.sourceUrl ?? "");
   const [description, setDescription] = useState("");
   const [declaredPrice, setDeclaredPrice] = useState("");
   const [declaredWeight, setDeclaredWeight] = useState("");
   const [declaredVolume, setDeclaredVolume] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const isPreFilledUrl = Boolean(params.sourceUrl);
 
   const weightVal = parseFloat(declaredWeight);
   const volumeVal = parseFloat(declaredVolume);
@@ -49,6 +56,32 @@ export default function CreateOrderScreen() {
     (weightVal * 10 + volumeVal * 0.05).toFixed(2);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Handle passed screenshot from params
+  useEffect(() => {
+    if (params.title && !title) {
+      setTitle(params.title);
+    }
+    if (params.sourceUrl && !sourceUrl) {
+      setSourceUrl(params.sourceUrl);
+    }
+    if (params.screenshotUrl) {
+      setImageUrls((prev) => (prev.includes(params.screenshotUrl!) ? prev : [...prev, params.screenshotUrl!]));
+    } else if (params.screenshotUri) {
+      const uploadLocalScreenshot = async () => {
+        try {
+          setUploading(true);
+          const uploadedUrl = await orderService.uploadImage(params.screenshotUri!);
+          setImageUrls((prev) => (prev.includes(uploadedUrl) ? prev : [...prev, uploadedUrl]));
+        } catch {
+          // If upload fails on mount, user can re-upload or keep local preview
+        } finally {
+          setUploading(false);
+        }
+      };
+      uploadLocalScreenshot();
+    }
+  }, [params.sourceUrl, params.screenshotUri, params.screenshotUrl, params.title]);
 
   const pickAndUploadImage = async () => {
     try {
@@ -129,17 +162,38 @@ export default function CreateOrderScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Digikala Quick Browser Action Card */}
+        <TouchableOpacity
+          style={[styles.digikalaBanner, { backgroundColor: '#EF394E' }]}
+          onPress={() => router.push('/orders/digikala')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.digikalaBannerLeft}>
+            <View style={styles.digikalaIconBadge}>
+              <Ionicons name="cart" size={20} color="#EF394E" />
+            </View>
+            <View style={styles.digikalaBannerTextCol}>
+              <Text style={styles.digikalaBannerTitle}>Browse Digikala In-App</Text>
+              <Text style={styles.digikalaBannerSubtitle}>
+                Auto-translate to Arabic, detect product & pre-fill order
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="arrow-forward-circle" size={26} color="#fff" />
+        </TouchableOpacity>
+
         {/* Info Banner */}
         <View
           style={[
             styles.infoBanner,
-            { backgroundColor: colors.infoLight, borderColor: colors.info },
+            { backgroundColor: isPreFilledUrl ? colors.successLight : colors.infoLight, borderColor: isPreFilledUrl ? colors.success : colors.info },
           ]}
         >
-          <Ionicons name="information-circle" size={20} color={colors.info} />
-          <Text style={[styles.infoText, { color: colors.info }]}>
-            Provide the product URL and details. Our team will verify the price
-            and send you a quote.
+          <Ionicons name={isPreFilledUrl ? "checkmark-circle" : "information-circle"} size={20} color={isPreFilledUrl ? colors.success : colors.info} />
+          <Text style={[styles.infoText, { color: isPreFilledUrl ? colors.success : colors.info }]}>
+            {isPreFilledUrl
+              ? "Product information pre-filled from Digikala. Fill any additional details and submit your request."
+              : "Provide the product URL and details. Our team will verify the price and send you a quote."}
           </Text>
         </View>
 
@@ -155,13 +209,14 @@ export default function CreateOrderScreen() {
         />
 
         <Input
-          label="Source URL"
+          label={isPreFilledUrl ? "Source URL (Pre-filled from Digikala)" : "Source URL"}
           placeholder="https://www.example.com/product"
           value={sourceUrl}
           onChangeText={setSourceUrl}
+          editable={!isPreFilledUrl}
           keyboardType="url"
           autoCapitalize="none"
-          icon={<Ionicons name="link-outline" size={18} color={colors.icon} />}
+          icon={<Ionicons name={isPreFilledUrl ? "lock-closed-outline" : "link-outline"} size={18} color={isPreFilledUrl ? colors.success : colors.icon} />}
         />
 
         <Input
@@ -314,6 +369,43 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.lg,
     paddingBottom: Spacing["4xl"],
+  },
+  digikalaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.lg,
+    ...Shadows.md,
+  },
+  digikalaBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+    paddingRight: Spacing.sm,
+  },
+  digikalaIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  digikalaBannerTextCol: {
+    flex: 1,
+  },
+  digikalaBannerTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  digikalaBannerSubtitle: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 11,
+    marginTop: 2,
   },
   infoBanner: {
     flexDirection: "row",
