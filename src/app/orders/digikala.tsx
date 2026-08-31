@@ -322,7 +322,6 @@ export default function DigikalaBrowserScreen() {
     if (!screenshotUri) return;
 
     const baseTitle = orderTitle.trim() || 'Digikala Product';
-    const finalTitle = quantity > 1 ? `${baseTitle} (Qty: ${quantity})` : baseTitle;
     const finalDescription = `Quantity: ${quantity}`;
 
     if (NAVIGATE_TO_CREATE_ORDER) {
@@ -333,7 +332,8 @@ export default function DigikalaBrowserScreen() {
         params: {
           sourceUrl: currentUrl,
           screenshotUri: screenshotUri,
-          title: finalTitle,
+          title: baseTitle,
+          quantity: String(quantity),
         },
       });
       return;
@@ -348,8 +348,9 @@ export default function DigikalaBrowserScreen() {
 
       // 2. Submit new order request
       const response = await orderService.create({
-        title: finalTitle,
+        title: baseTitle,
         source_url: currentUrl,
+        quantity: quantity,
         description: finalDescription,
         image_urls: [uploadedImageUrl],
       });

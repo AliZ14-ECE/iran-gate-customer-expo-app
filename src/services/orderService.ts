@@ -21,6 +21,7 @@ export interface CreateOrderPayload {
   title: string;
   description?: string;
   image_urls?: string[];
+  quantity?: number;
   declared_price?: number;
   declared_weight?: number;
   declared_volume?: number;
@@ -33,6 +34,7 @@ export interface Order {
   title: string;
   description?: string | null;
   image_urls?: string[];
+  quantity?: number;
   declared_price?: number | null;
   verified_price?: number | null;
   declared_shipping_fee?: number | null;

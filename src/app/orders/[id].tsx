@@ -203,7 +203,7 @@ export default function OrderDetailScreen() {
           </Text>
         </Card>
       )}
-      {/* Order Info */}
+        {/* Order Info */}
       <Card style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Order Details
@@ -217,6 +217,12 @@ export default function OrderDetailScreen() {
           isLink
         />
         <DetailRow
+          icon="layers-outline"
+          label="Quantity"
+          value={`${order.quantity || 1} unit${(order.quantity || 1) > 1 ? "s" : ""}`}
+          colors={colors}
+        />
+        <DetailRow
           icon="document-text-outline"
           label="Description"
           value={order.description || "—"}
@@ -224,7 +230,7 @@ export default function OrderDetailScreen() {
         />
         <DetailRow
           icon="cash-outline"
-          label="Declared Price"
+          label="Declared Unit Price"
           value={
             order.declared_price != null
               ? formatCurrency(order.declared_price)
@@ -232,6 +238,14 @@ export default function OrderDetailScreen() {
           }
           colors={colors}
         />
+        {order.declared_price != null && (order.quantity || 1) > 1 && (
+          <DetailRow
+            icon="calculator-outline"
+            label="Declared Subtotal"
+            value={formatCurrency(order.declared_price * (order.quantity || 1))}
+            colors={colors}
+          />
+        )}
         <DetailRow
           icon="barbell-outline"
           label="Declared Weight"

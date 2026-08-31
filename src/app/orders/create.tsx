@@ -36,17 +36,21 @@ export default function CreateOrderScreen() {
     screenshotUri?: string;
     screenshotUrl?: string;
     title?: string;
+    quantity?: string;
   }>();
 
   const [title, setTitle] = useState(params.title ?? "");
   const [sourceUrl, setSourceUrl] = useState(params.sourceUrl ?? "");
   const [description, setDescription] = useState("");
+  const [quantity, setQuantity] = useState(params.quantity ? parseInt(params.quantity, 10) || 1 : 1);
   const [declaredPrice, setDeclaredPrice] = useState("");
   const [declaredWeight, setDeclaredWeight] = useState("");
   const [declaredVolume, setDeclaredVolume] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const isPreFilledUrl = Boolean(params.sourceUrl);
 
+  const unitPrice = parseFloat(declaredPrice) || 0;
+  const subtotalPrice = unitPrice * quantity;
   const weightVal = parseFloat(declaredWeight);
   const volumeVal = parseFloat(declaredVolume);
   // A simple equation: $10 per kg + $0.05 per cm³ (Modify later)
@@ -57,13 +61,17 @@ export default function CreateOrderScreen() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Handle passed screenshot from params
+  // Handle passed screenshot & parameters from params
   useEffect(() => {
     if (params.title && !title) {
       setTitle(params.title);
     }
     if (params.sourceUrl && !sourceUrl) {
       setSourceUrl(params.sourceUrl);
+    }
+    if (params.quantity) {
+      const q = parseInt(params.quantity, 10);
+      if (!isNaN(q) && q >= 1) setQuantity(q);
     }
     if (params.screenshotUrl) {
       setImageUrls((prev) => (prev.includes(params.screenshotUrl!) ? prev : [...prev, params.screenshotUrl!]));
@@ -81,7 +89,7 @@ export default function CreateOrderScreen() {
       };
       uploadLocalScreenshot();
     }
-  }, [params.sourceUrl, params.screenshotUri, params.screenshotUrl, params.title]);
+  }, [params.sourceUrl, params.screenshotUri, params.screenshotUrl, params.title, params.quantity]);
 
   const pickAndUploadImage = async () => {
     try {
@@ -128,6 +136,7 @@ export default function CreateOrderScreen() {
         title: title.trim(),
         source_url: sourceUrl.trim(),
         description: description.trim(),
+        quantity: quantity,
         declared_price: parseFloat(declaredPrice),
         declared_weight: declaredWeight
           ? parseFloat(declaredWeight)
@@ -236,14 +245,103 @@ export default function CreateOrderScreen() {
           }
         />
 
+        {/* Quantity Stepper */}
+        <View style={styles.quantitySection}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+            Quantity
+          </Text>
+          <View
+            style={[
+              styles.quantityRow,
+              {
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.quantityInfo}>
+              <Ionicons name="layers-outline" size={20} color={colors.primary} />
+              <Text style={[styles.quantityTitle, { color: colors.text }]}>
+                Item Quantity
+              </Text>
+            </View>
+
+            <View style={styles.stepperContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.stepperBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1 || submitting}
+              >
+                <Ionicons
+                  name="remove"
+                  size={18}
+                  color={quantity <= 1 ? colors.textTertiary : colors.text}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.quantityNumberBox}>
+                <Text style={[styles.quantityNumberText, { color: colors.text }]}>
+                  {quantity}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.stepperBtn,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setQuantity((q) => q + 1)}
+                disabled={submitting}
+              >
+                <Ionicons name="add" size={18} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Unit Price Input */}
         <Input
-          label="Price (USD)"
+          label="Unit Price (USD)"
           placeholder="0.00"
           value={declaredPrice}
           onChangeText={setDeclaredPrice}
           keyboardType="decimal-pad"
           icon={<Ionicons name="cash-outline" size={18} color={colors.icon} />}
         />
+
+        {/* Computed Subtotal Summary */}
+        {unitPrice > 0 && (
+          <View
+            style={[
+              styles.subtotalCard,
+              {
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.subtotalLeft}>
+              <Text style={[styles.subtotalLabel, { color: colors.textSecondary }]}>
+                Computed Subtotal
+              </Text>
+              <Text style={[styles.subtotalFormula, { color: colors.textTertiary }]}>
+                ${unitPrice.toFixed(2)} × {quantity} unit{quantity > 1 ? "s" : ""}
+              </Text>
+            </View>
+            <Text style={[styles.subtotalValue, { color: colors.primary }]}>
+              ${subtotalPrice.toFixed(2)}
+            </Text>
+          </View>
+        )}
 
         {/* Shipping Fee */}
         <Text
@@ -472,5 +570,74 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: Spacing.sm,
+  },
+  quantitySection: {
+    marginBottom: Spacing.lg,
+  },
+  quantityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  quantityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  quantityTitle: {
+    ...TextStyles.bodyMedium,
+    fontSize: 14,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  stepperBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityNumberBox: {
+    minWidth: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityNumberText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  subtotalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.lg,
+  },
+  subtotalLeft: {
+    flex: 1,
+  },
+  subtotalLabel: {
+    ...TextStyles.captionMedium,
+    fontSize: 12,
+  },
+  subtotalFormula: {
+    ...TextStyles.caption,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  subtotalValue: {
+    ...TextStyles.h3,
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
