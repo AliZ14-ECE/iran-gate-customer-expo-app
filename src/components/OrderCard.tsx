@@ -54,7 +54,15 @@ export function OrderCard({ order, onPress }: OrderCardProps) {
             color={colors.iconSecondary}
           />
         </View>
-        <StatusBadge status={order.status} />
+        <View style={styles.badgeRow}>
+          <StatusBadge status={order.status} />
+          <View style={[styles.qtyBadge, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+            <Ionicons name="layers-outline" size={12} color={colors.primary} />
+            <Text style={[styles.qtyBadgeText, { color: colors.text }]}>
+              Qty: {order.quantity || 1}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -63,7 +71,11 @@ export function OrderCard({ order, onPress }: OrderCardProps) {
         <View style={styles.footerItem}>
           <Ionicons name="pricetag-outline" size={14} color={colors.iconSecondary} />
           <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            {order.declared_price != null ? formatCurrency(order.declared_price) : '—'}
+            {order.declared_price != null
+              ? (order.quantity && order.quantity > 1
+                  ? `${formatCurrency(order.declared_price)} × ${order.quantity} (${formatCurrency(order.declared_price * order.quantity)})`
+                  : formatCurrency(order.declared_price))
+              : '—'}
           </Text>
         </View>
         <View style={styles.footerItem}>
@@ -98,6 +110,24 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: Spacing.sm,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  qtyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  qtyBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
   divider: {
     height: 1,
     marginVertical: Spacing.md,
@@ -105,6 +135,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   footerItem: {
     flexDirection: 'row',

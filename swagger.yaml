@@ -466,6 +466,12 @@ components:
           type: string
           format: uuid
           nullable: true
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of units requested for this product
+          example: 2
         created_at:
           type: string
           format: date-time
@@ -670,11 +676,17 @@ components:
             type: string
             format: uri
           description: Optional product image URLs
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of units requested for this product (defaults to 1)
+          example: 2
         declared_price:
           type: number
           format: double
           nullable: true
-          description: Customer-declared estimated price
+          description: Customer-declared estimated price per unit
           example: 349.99
         declared_weight:
           type: number
