@@ -31,7 +31,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const segments = useSegments();
-  const { token, isHydrated, hydrate } = useAuthStore();
+  const { accessToken, isHydrated, hydrate } = useAuthStore();
 
   // Hydrate auth state from SecureStore on app start
   useEffect(() => {
@@ -44,14 +44,14 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === "(auth)";
 
-    if (!token && !inAuthGroup) {
+    if (!accessToken && !inAuthGroup) {
       // Not authenticated — go to login
       router.replace("/(auth)/login");
-    } else if (token && inAuthGroup) {
+    } else if (accessToken && inAuthGroup) {
       // Authenticated — go to main tabs
       router.replace("/(tabs)");
     }
-  }, [token, isHydrated, segments, router]);
+  }, [accessToken, isHydrated, segments, router]);
 
   if (!isHydrated) {
     return <LoadingScreen />;
