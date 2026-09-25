@@ -17,6 +17,10 @@ export const Endpoints = {
     login: '/auth/login',
     /** POST — body: { name, email, password } */
     register: '/auth/register',
+    /** POST — body: { refresh_token } */
+    refresh: '/auth/refresh',
+    /** POST — body: { refresh_token } */
+    logout: '/auth/logout',
   },
 
   notifications: {

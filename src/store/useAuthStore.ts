@@ -1,28 +1,28 @@
 /**
  * Iran Gate — Zustand Auth Store
  *
- * Manages authentication state, JWT persistence, and user data.
+ * Manages authentication state, access & refresh token persistence, and user data.
  */
 
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { authService, type AuthResponse } from '@/services/authService';
-import { TOKEN_KEY } from '@/services/api';
+import { authService, type AuthResponse, type User } from '@/services/authService';
+import {
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  setSessionExpiredHandler,
+} from '@/services/api';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+export type { User };
 
 interface AuthState {
-  token: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   user: User | null;
   isLoading: boolean;
   isHydrated: boolean;
 
-  /** Read token from SecureStore on app start */
+  /** Read tokens and user from SecureStore on app start */
   hydrate: () => Promise<void>;
 
   /** Login with email & password */
@@ -31,45 +31,49 @@ interface AuthState {
   /** Register a new account */
   register: (name: string, email: string, password: string) => Promise<AuthResponse>;
 
-  /** Clear auth state and SecureStore */
+  /** Clear auth state, revoke refresh token on backend, and remove from SecureStore */
   logout: () => Promise<void>;
 
-  /** Set auth data after successful login/register */
-  setAuth: (token: string, user: User) => Promise<void>;
+  /** Set auth data after successful login/register or refresh */
+  setAuth: (accessToken: string, refreshToken: string, user: User) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
+  accessToken: null,
+  refreshToken: null,
   user: null,
   isLoading: false,
   isHydrated: false,
 
   hydrate: async () => {
     try {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const accessToken = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
       const userJson = await SecureStore.getItemAsync('irangate_user');
       const user = userJson ? (JSON.parse(userJson) as User) : null;
 
-      set({ token, user, isHydrated: true });
+      set({ accessToken, refreshToken, user, isHydrated: true });
     } catch {
-      set({ token: null, user: null, isHydrated: true });
+      set({ accessToken: null, refreshToken: null, user: null, isHydrated: true });
     }
   },
 
-  setAuth: async (token: string, user: User) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+  setAuth: async (accessToken: string, refreshToken: string, user: User) => {
+    await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken);
+    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
     await SecureStore.setItemAsync('irangate_user', JSON.stringify(user));
-    set({ token, user });
+    set({ accessToken, refreshToken, user });
   },
 
   login: async (email: string, password: string) => {
     set({ isLoading: true });
     try {
       const response = await authService.login({ email, password });
-      const { token, user } = response.data;
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      const { access_token, refresh_token, user } = response.data;
+      await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access_token);
+      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh_token);
       await SecureStore.setItemAsync('irangate_user', JSON.stringify(user));
-      set({ token, user, isLoading: false });
+      set({ accessToken: access_token, refreshToken: refresh_token, user, isLoading: false });
       return response.data;
     } catch (error) {
       set({ isLoading: false });
@@ -81,10 +85,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       const response = await authService.register({ name, email, password });
-      const { token, user } = response.data;
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      const { access_token, refresh_token, user } = response.data;
+      await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access_token);
+      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh_token);
       await SecureStore.setItemAsync('irangate_user', JSON.stringify(user));
-      set({ token, user, isLoading: false });
+      set({ accessToken: access_token, refreshToken: refresh_token, user, isLoading: false });
       return response.data;
     } catch (error) {
       set({ isLoading: false });
@@ -93,12 +98,27 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
+    const currentRefreshToken = useAuthStore.getState().refreshToken;
+    if (currentRefreshToken) {
+      try {
+        await authService.logout(currentRefreshToken);
+      } catch {
+        // Non-critical: if server is unreachable or fails, proceed with local logout
+      }
+    }
+
     try {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
       await SecureStore.deleteItemAsync('irangate_user');
     } catch {
       // ignore
     }
-    set({ token: null, user: null });
+    set({ accessToken: null, refreshToken: null, user: null });
   },
 }));
+
+// Synchronize store when 401 interceptor detects session expiry
+setSessionExpiredHandler(() => {
+  useAuthStore.setState({ accessToken: null, refreshToken: null, user: null });
+});
