@@ -156,10 +156,17 @@ api.interceptors.response.use(
 
       originalRequest.headers.Authorization = `Bearer ${access_token}`;
       return api(originalRequest);
-    } catch (refreshError) {
+    } catch (refreshError: unknown) {
       processQueue(refreshError, null);
-      await clearStoredAuth();
-      onSessionExpired?.();
+
+      const status = (refreshError as AxiosError)?.response?.status;
+      // Only clear credentials & notify session expired if refresh token is rejected (401/403) or missing
+      // If refresh failed due to rate limiting (429) or network interruption, preserve stored auth
+      if (!status || status === 401 || status === 403) {
+        await clearStoredAuth();
+        onSessionExpired?.();
+      }
+
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

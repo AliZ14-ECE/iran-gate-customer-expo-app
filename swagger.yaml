@@ -84,6 +84,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "409":
           $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -113,6 +115,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/APIError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -148,6 +152,8 @@ paths:
                 $ref: "#/components/schemas/APIError"
               example:
                 error: "invalid refresh token"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -1231,3 +1237,12 @@ components:
             $ref: "#/components/schemas/APIError"
           example:
             error: "failed to create user"
+
+    TooManyRequests:
+      description: Rate limit exceeded. Try again later.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIError"
+          example:
+            error: "too many requests"
