@@ -70,13 +70,25 @@ export const ORDER_STATUSES: OrderStatus[] = [
   "DELIVERED",
 ];
 /**
- * Extract a displayable error message from an Axios error.
+ * Extract a displayable error message from an Axios error or generic error.
  */
 export function getErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "response" in error) {
     const axiosError = error as {
-      response?: { data?: { message?: string; error?: string } };
+      response?: {
+        status?: number;
+        data?: { message?: string; error?: string };
+      };
     };
+
+    if (axiosError.response?.status === 429) {
+      return (
+        axiosError.response?.data?.error ??
+        axiosError.response?.data?.message ??
+        "Too many requests. Please wait a moment and try again."
+      );
+    }
+
     return (
       axiosError.response?.data?.message ??
       axiosError.response?.data?.error ??
